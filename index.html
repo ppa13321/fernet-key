@@ -5,23 +5,29 @@
     <title>Acceso Temporal - Fernet</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        body { background: #000; color: #00ffff; font-family: sans-serif; text-align: center; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { border: 2px solid #00ffff; padding: 2rem; border-radius: 15px; background: #111; display: none; }
-        #error { color: #ff4444; font-weight: bold; }
+        body { background: #000; color: #00ffff; font-family: 'Segoe UI', sans-serif; text-align: center; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { border: 2px solid #00ffff; padding: 2.5rem; border-radius: 15px; background: #111; display: none; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 90%; max-width: 400px; }
+        #error { color: #ff4444; font-weight: bold; padding: 20px; }
+        input { width: 100%; padding: 12px; margin: 20px 0; background: #1a1a1a; border: 1px solid #00ffff; color: white; border-radius: 5px; text-align: center; font-size: 1.2rem; box-sizing: border-box; }
+        button { width: 100%; padding: 14px; background: #00ffff; color: black; font-weight: bold; cursor: pointer; border: none; border-radius: 5px; text-transform: uppercase; transition: 0.3s; }
+        button:hover { background: #00dada; transform: scale(1.02); }
+        #result { color: #0f0; margin-top: 25px; font-size: 2rem; letter-spacing: 5px; font-weight: bold; border: 2px dashed #0f0; padding: 10px; display: none; }
     </style>
 </head>
 <body onload="validarAcceso()">
 
     <div id="error">
-        <h2>⚠️ ENLACE EXPIRADO O INVÁLIDO</h2>
+        <h2 style="font-size: 1.5rem;">⚠️ ENLACE EXPIRADO O INVÁLIDO</h2>
         <p>Debes generar un nuevo link desde el programa Fernet Optimizer.</p>
+        <p style="font-size: 0.8rem; color: #666;">(El acceso dinámico solo dura unos minutos por seguridad)</p>
     </div>
 
     <div id="app" class="card">
-        <h2>🔑 GENERADOR DE KEY</h2>
-        <input type="text" id="tokenInput" placeholder="TOKEN DE 6 DÍGITOS" maxlength="6" style="width:100%; padding:10px; margin:10px 0;">
-        <button onclick="generarKey()" style="width:100%; padding:10px; background:#00ffff; font-weight:bold; cursor:pointer;">GENERAR KEY</button>
-        <h1 id="result" style="color:#0f0; margin-top:20px;"></h1>
+        <h2 style="margin-top: 0;">🔑 GENERADOR DE KEY</h2>
+        <p style="color: #aaa; font-size: 0.9rem;">Pega tu TOKEN de 6 caracteres:</p>
+        <input type="text" id="tokenInput" placeholder="EJ: A1B2C3" maxlength="6">
+        <button onclick="generarKey()">GENERAR MI KEY</button>
+        <div id="result"></div>
     </div>
 
     <script>
@@ -31,14 +37,20 @@
             const params = new URLSearchParams(window.location.search);
             const auth = params.get('v');
             
+            if (!auth) return; 
+
             // Obtenemos el tiempo actual redondeado al minuto
             const tiempoBase = Math.floor(Date.now() / 60000); 
             
-            // Verificamos el minuto actual y el minuto anterior (por si Cuty tarda un poco)
-            const hashValido1 = CryptoJS.MD5(SECRET_WEB + tiempoBase).toString().substring(0, 10);
-            const hashValido2 = CryptoJS.MD5(SECRET_WEB + (tiempoBase - 1)).toString().substring(0, 10);
+            // Verificamos Minuto Actual, -1 y -2 (Margen de 3 minutos de gracia)
+            const hashesValidos = [
+                CryptoJS.MD5(SECRET_WEB + tiempoBase).toString().substring(0, 10),
+                CryptoJS.MD5(SECRET_WEB + (tiempoBase - 1)).toString().substring(0, 10),
+                CryptoJS.MD5(SECRET_WEB + (tiempoBase - 2)).toString().substring(0, 10)
+            ];
 
-            if (auth === hashValido1 || auth === hashValido2) {
+            // Comparamos el parámetro 'v' con los hashes permitidos
+            if (hashesValidos.includes(auth.toLowerCase())) {
                 document.getElementById('error').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
             }
@@ -47,7 +59,12 @@
         function generarKey() {
             const token = document.getElementById('tokenInput').value.trim().toUpperCase();
             const secretoProg = "FERNET_PRO_2026"; 
-            if (token.length !== 6) return;
+            const resDiv = document.getElementById('result');
+
+            if (token.length !== 6) {
+                alert("El token debe tener 6 caracteres.");
+                return;
+            }
 
             // Validación de firma (Checksum 4+2)
             const hashBase = token.substring(0, 4);
@@ -56,9 +73,11 @@
 
             if (firmaRecibida === firmaEsperada) {
                 const finalHash = CryptoJS.SHA256(token + secretoProg).toString().toUpperCase();
-                document.getElementById('result').innerText = finalHash.substring(0, 8);
+                resDiv.innerText = finalHash.substring(0, 8);
+                resDiv.style.display = 'block';
             } else {
-                alert("Token Falso detectado.");
+                alert("Token Falso o Inválido.");
+                resDiv.style.display = 'none';
             }
         }
     </script>
