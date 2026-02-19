@@ -2,54 +2,129 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Acceso Temporal - Fernet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Temporal - Fernet Optimizer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        body { background: #000; color: #00ffff; font-family: 'Segoe UI', sans-serif; text-align: center; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { border: 2px solid #00ffff; padding: 2.5rem; border-radius: 15px; background: #111; display: none; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 90%; max-width: 400px; }
-        #error { color: #ff4444; font-weight: bold; padding: 20px; }
-        input { width: 100%; padding: 12px; margin: 20px 0; background: #1a1a1a; border: 1px solid #00ffff; color: white; border-radius: 5px; text-align: center; font-size: 1.2rem; box-sizing: border-box; }
-        button { width: 100%; padding: 14px; background: #00ffff; color: black; font-weight: bold; cursor: pointer; border: none; border-radius: 5px; text-transform: uppercase; transition: 0.3s; }
-        button:hover { background: #00dada; transform: scale(1.02); }
-        #result { color: #0f0; margin-top: 25px; font-size: 2rem; letter-spacing: 5px; font-weight: bold; border: 2px dashed #0f0; padding: 10px; display: none; }
+        body { 
+            background: #050505; 
+            color: #00ffff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden;
+        }
+        .card { 
+            border: 2px solid #00ffff; 
+            padding: 2.5rem; 
+            border-radius: 15px; 
+            background: #111; 
+            display: none; 
+            box-shadow: 0 0 30px rgba(0,255,255,0.15); 
+            width: 90%; 
+            max-width: 400px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #error { color: #ff4444; font-weight: bold; padding: 20px; border: 1px solid #ff4444; border-radius: 10px; background: rgba(255,68,68,0.05); }
+        
+        input { 
+            width: 100%; 
+            padding: 15px; 
+            margin: 20px 0; 
+            background: #1a1a1a; 
+            border: 1px solid #333; 
+            color: #00ffff; 
+            border-radius: 8px; 
+            text-align: center; 
+            font-size: 1.3rem; 
+            font-weight: bold;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+        input:focus { border-color: #00ffff; outline: none; box-shadow: 0 0 10px rgba(0,255,255,0.3); }
+        
+        button { 
+            width: 100%; 
+            padding: 14px; 
+            background: #00ffff; 
+            color: black; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border: none; 
+            border-radius: 8px; 
+            text-transform: uppercase; 
+            transition: 0.3s;
+            font-size: 1rem;
+        }
+        button:hover { background: #fff; transform: scale(1.02); }
+        
+        #result-container { margin-top: 25px; display: none; }
+        #result { 
+            color: #0f0; 
+            font-size: 2.2rem; 
+            letter-spacing: 3px; 
+            font-weight: bold; 
+            border: 2px dashed #0f0; 
+            padding: 15px; 
+            background: rgba(0,255,0,0.05);
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .footer-text { margin-top: 15px; font-size: 0.75rem; color: #555; }
     </style>
 </head>
 <body onload="validarAcceso()">
 
     <div id="error">
-        <h2 style="font-size: 1.5rem;">⚠️ ENLACE EXPIRADO O INVÁLIDO</h2>
-        <p>Debes generar un nuevo link desde el programa Fernet Optimizer.</p>
-        <p style="font-size: 0.8rem; color: #666;">(El acceso dinámico solo dura unos minutos por seguridad)</p>
+        <h2 style="font-size: 1.5rem; margin-top: 0;">⚠️ ACCESO DENEGADO</h2>
+        <p>Este enlace es inválido o ha expirado por seguridad.</p>
+        <p style="font-size: 0.85rem;">Vuelve a abrir el programa para generar un nuevo acceso.</p>
     </div>
 
     <div id="app" class="card">
-        <h2 style="margin-top: 0;">🔑 GENERADOR DE KEY</h2>
-        <p style="color: #aaa; font-size: 0.9rem;">Pega tu TOKEN de 6 caracteres:</p>
-        <input type="text" id="tokenInput" placeholder="EJ: A1B2C3" maxlength="6">
-        <button onclick="generarKey()">GENERAR MI KEY</button>
-        <div id="result"></div>
+        <h2 style="margin-top: 0; color: #fff;">FERNET <span style="color:#00ffff">KEY</span></h2>
+        <p style="color: #888; font-size: 0.9rem;">Ingresa el TOKEN que aparece en el optimizador:</p>
+        
+        <input type="text" id="tokenInput" placeholder="EJ: A1B2C3" maxlength="6" autocomplete="off">
+        
+        <button onclick="generarKey()">DESBLOQUEAR AHORA</button>
+
+        <div id="result-container">
+            <p style="color: #0f0; margin-bottom: 5px; font-size: 0.8rem;">Copia esta KEY en el programa:</p>
+            <div id="result"></div>
+        </div>
+        
+        <p class="footer-text">Security Shield Active © 2026</p>
     </div>
 
     <script>
         const SECRET_WEB = "FERNET_BYPASS_SHIELD_2026";
+        const SECRETO_PROG = "FERNET_PRO_2026";
 
         function validarAcceso() {
             const params = new URLSearchParams(window.location.search);
             const auth = params.get('v');
             
-            if (!auth) return; 
+            if (!auth) return;
 
-            // Obtenemos el tiempo actual redondeado al minuto
-            const tiempoBase = Math.floor(Date.now() / 60000); 
+            // Tiempo base en minutos UTC
+            const tiempoBase = Math.floor(Date.now() / 60000);
             
-            // Verificamos Minuto Actual, -1 y -2 (Margen de 3 minutos de gracia)
-            const hashesValidos = [
-                CryptoJS.MD5(SECRET_WEB + tiempoBase).toString().substring(0, 10),
-                CryptoJS.MD5(SECRET_WEB + (tiempoBase - 1)).toString().substring(0, 10),
-                CryptoJS.MD5(SECRET_WEB + (tiempoBase - 2)).toString().substring(0, 10)
-            ];
+            // Margen de 5 MINUTOS (Actual y los 4 minutos anteriores)
+            // Esto da tiempo suficiente para pasar Cuty.io
+            const hashesValidos = [];
+            for (let i = 0; i < 5; i++) {
+                let h = CryptoJS.MD5(SECRET_WEB + (tiempoBase - i)).toString().substring(0, 10);
+                hashesValidos.push(h.toLowerCase());
+            }
 
-            // Comparamos el parámetro 'v' con los hashes permitidos
             if (hashesValidos.includes(auth.toLowerCase())) {
                 document.getElementById('error').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
@@ -58,26 +133,30 @@
 
         function generarKey() {
             const token = document.getElementById('tokenInput').value.trim().toUpperCase();
-            const secretoProg = "FERNET_PRO_2026"; 
             const resDiv = document.getElementById('result');
+            const resCont = document.getElementById('result-container');
 
             if (token.length !== 6) {
-                alert("El token debe tener 6 caracteres.");
+                alert("Error: El token debe ser de 6 caracteres.");
                 return;
             }
 
-            // Validación de firma (Checksum 4+2)
+            // Validación de integridad del Token (4 base + 2 firma)
             const hashBase = token.substring(0, 4);
             const firmaRecibida = token.substring(4, 6);
-            const firmaEsperada = CryptoJS.MD5(hashBase + secretoProg).toString().toUpperCase().substring(0, 2);
+            const firmaEsperada = CryptoJS.MD5(hashBase + SECRETO_PROG).toString().toUpperCase().substring(0, 2);
 
             if (firmaRecibida === firmaEsperada) {
-                const finalHash = CryptoJS.SHA256(token + secretoProg).toString().toUpperCase();
+                // Generar la KEY final usando SHA256
+                const finalHash = CryptoJS.SHA256(token + SECRETO_PROG).toString().toUpperCase();
                 resDiv.innerText = finalHash.substring(0, 8);
-                resDiv.style.display = 'block';
+                resCont.style.display = 'block';
+                
+                // Efecto visual de éxito
+                document.getElementById('tokenInput').style.borderColor = "#0f0";
             } else {
-                alert("Token Falso o Inválido.");
-                resDiv.style.display = 'none';
+                alert("TOKEN INVÁLIDO: Verifica que hayas copiado el código correctamente.");
+                resCont.style.display = 'none';
             }
         }
     </script>
