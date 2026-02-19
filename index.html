@@ -9,13 +9,12 @@
         body { background: #0a0a0a; color: #00ffff; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .card { background: #111; padding: 2.5rem; border: 2px solid #00ffff; border-radius: 15px; text-align: center; box-shadow: 0 0 25px rgba(0,255,255,0.2); width: 90%; max-width: 420px; }
         input { width: 100%; padding: 14px; margin: 20px 0; background: #1a1a1a; border: 1px solid #00ffff; color: white; border-radius: 5px; box-sizing: border-box; text-align: center; font-size: 1.2rem; outline: none; }
-        button { background: #00ffff; color: black; border: none; padding: 14px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; transition: 0.3s; font-size: 1rem; text-transform: uppercase; margin-bottom: 10px; }
+        button { background: #00ffff; color: black; border: none; padding: 14px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; transition: 0.3s; font-size: 1rem; text-transform: uppercase; }
         button:hover { background: #00dada; transform: scale(1.02); }
-        #keyDisplay { margin-top: 25px; padding: 15px; border: 2px dashed #00ff00; background: rgba(0,255,0,0.05); border-radius: 10px; display: none; position: relative; }
+        #keyDisplay { margin-top: 25px; padding: 15px; border: 2px dashed #00ff00; background: rgba(0,255,0,0.05); border-radius: 10px; display: none; }
         .key-text { font-size: 1.8rem; letter-spacing: 3px; color: #00ff00; font-weight: bold; display: block; margin: 10px 0; }
-        .copy-btn { background: #00ff00; color: black; padding: 5px 15px; font-size: 0.7rem; border-radius: 3px; cursor: pointer; display: inline-block; transition: 0.3s; }
-        .copy-btn:hover { background: #00cc00; }
-        .error { color: #ff4444; font-size: 0.8rem; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: bold; }
+        .copy-btn { background: #00ff00; color: black; padding: 8px 15px; font-size: 0.75rem; border-radius: 5px; cursor: pointer; display: inline-block; font-weight: bold; margin-top: 5px; }
+        .error { color: #ff4444; font-size: 0.85rem; margin-top: -10px; margin-bottom: 15px; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
@@ -24,38 +23,50 @@
         <p style="color: #aaa; font-size: 0.9rem;">Ingresa el <b>TOKEN DE 6 CARACTERES</b>:</p>
         
         <input type="text" id="tokenInput" placeholder="EJ: A1B2C3" maxlength="6">
-        <div id="errorMsg" class="error">⚠️ TOKEN INVÁLIDO: Debe tener 6 caracteres</div>
+        <div id="errorMsg" class="error">⚠️ TOKEN FALSO O INVÁLIDO</div>
         
         <button onclick="generarKey()">GENERAR MI KEY</button>
         
         <div id="keyDisplay">
-            <span style="color: #00ff00; font-size: 0.85rem; font-weight: bold;">KEY LISTA PARA ACTIVAR:</span>
+            <span style="color: #00ff00; font-size: 0.85rem;">TU KEY DE ACTIVACIÓN:</span>
             <span id="keyValue" class="key-text"></span>
-            <div class="copy-btn" onclick="copiarKey()">COPIAR AL PORTAPAPELES</div>
+            <div id="btnCopiar" class="copy-btn" onclick="copiarKey()">COPIAR KEY</div>
         </div>
     </div>
 
     <script>
         function generarKey() {
-            const token = document.getElementById('tokenInput').value.trim().toUpperCase();
+            const input = document.getElementById('tokenInput');
+            const token = input.value.trim().toUpperCase();
             const errorMsg = document.getElementById('errorMsg');
             const display = document.getElementById('keyDisplay');
             const val = document.getElementById('keyValue');
             const secreto = "FERNET_PRO_2026"; 
 
-            // RESET DE ESTADOS
             display.style.display = "none";
             errorMsg.style.display = "none";
 
-            // BLOQUEO SI NO TIENE 6 CARACTERES
+            // 1. Validar longitud
             if (token.length !== 6) {
+                errorMsg.innerText = "⚠️ DEBE TENER 6 CARACTERES";
                 errorMsg.style.display = "block";
-                return; // ESTO DETIENE EL SCRIPT COMPLETAMENTE
+                return;
             }
 
-            // SI PASÓ LA VALIDACIÓN, GENERA LA KEY
-            const hash = CryptoJS.SHA256(token + secreto).toString().toUpperCase();
-            const keyFinal = hash.substring(0, 8);
+            // 2. VALIDACIÓN DE VERACIDAD (Checksum)
+            const hashBase = token.substring(0, 4);
+            const firmaRecibida = token.substring(4, 6);
+            const firmaEsperada = CryptoJS.MD5(hashBase + secreto).toString().toUpperCase().substring(0, 2);
+
+            if (firmaRecibida !== firmaEsperada) {
+                errorMsg.innerText = "⚠️ EL TOKEN ES FALSO O NO EXISTE";
+                errorMsg.style.display = "block";
+                return; // Bloqueo total si la firma no coincide
+            }
+
+            // 3. Si pasó la firma, generamos la Key final
+            const hashKey = CryptoJS.SHA256(token + secreto).toString().toUpperCase();
+            const keyFinal = hashKey.substring(0, 8);
 
             val.innerText = keyFinal;
             display.style.display = "block";
@@ -63,12 +74,12 @@
 
         function copiarKey() {
             const key = document.getElementById('keyValue').innerText;
+            const btn = document.getElementById('btnCopiar');
             navigator.clipboard.writeText(key).then(() => {
-                const btn = document.querySelector('.copy-btn');
                 btn.innerText = "¡COPIADO!";
                 btn.style.background = "#ffffff";
                 setTimeout(() => {
-                    btn.innerText = "COPIAR AL PORTAPAPELES";
+                    btn.innerText = "COPIAR KEY";
                     btn.style.background = "#00ff00";
                 }, 2000);
             });
