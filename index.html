@@ -75,30 +75,46 @@
 
         function validarAcceso() {
             const params = new URLSearchParams(window.location.search);
-            const auth = params.get('v');
+            let auth = params.get('v');
+            const data = params.get('data');
+
+            // --- LÓGICA DE DECODIFICACIÓN Y OCULTAMIENTO ---
+            if (data) {
+                try {
+                    // Decodificamos el Base64 que viene de Python
+                    const decoded = atob(data); 
+                    const dataParams = new URLSearchParams(decoded);
+                    auth = dataParams.get('v');
+                    
+                    // TRUCO MAESTRO: Borramos los parámetros de la URL del navegador
+                    // para que el usuario solo vea ".../fernet-key/" y no pueda copiar el acceso.
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch(e) {
+                    auth = null;
+                }
+            }
             
-            // 1. Si no hay parámetro 'v', eliminamos el contenido del body inmediatamente
+            // Si no hay hash de acceso, bloqueamos todo
             if (!auth) {
-                document.body.innerHTML = '<h1 style="color:red">ERROR 403: ACCESO PROHIBIDO</h1>';
+                document.body.innerHTML = '<h1 style="color:red; margin-top:20vh;">ERROR 403: ACCESO PROHIBIDO</h1><p>Debes abrir el link desde el optimizador.</p>';
                 return;
             }
 
             const tiempoBase = Math.floor(Date.now() / 60000);
             const hashesValidos = [];
 
-            // Margen de 6 minutos para que el usuario pase el acortador sin prisas
+            // Margen de 6 minutos para pasar el acortador
             for (let i = 0; i < 6; i++) {
                 let h = CryptoJS.MD5(SECRET_WEB + (tiempoBase - i)).toString().substring(0, 10);
                 hashesValidos.push(h.toLowerCase());
             }
 
-            // 2. Si el hash 'v' es correcto, mostramos la App y ocultamos el error
+            // Validación final
             if (hashesValidos.includes(auth.toLowerCase())) {
                 document.getElementById('error-container').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
             } else {
-                // Si el hash no coincide, borramos todo
-                document.body.innerHTML = '<h1 style="color:red">SESIÓN EXPIRADA</h1><p>Por favor, vuelve a abrir el programa.</p>';
+                document.body.innerHTML = '<h1 style="color:red; margin-top:20vh;">SESIÓN EXPIRADA</h1><p>El tiempo de validación ha terminado. Reinicia el programa.</p>';
             }
         }
 
@@ -112,7 +128,6 @@
                 return;
             }
 
-            // Verificación de firma del Token (Seguridad interna)
             const hashBase = token.substring(0, 4);
             const firmaRecibida = token.substring(4, 6);
             const firmaEsperada = CryptoJS.MD5(hashBase + SECRETO_PROG).toString().toUpperCase().substring(0, 2);
