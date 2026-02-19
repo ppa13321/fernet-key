@@ -8,37 +8,46 @@
     <style>
         body { background: #0a0a0a; color: #00ffff; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .card { background: #111; padding: 2rem; border: 2px solid #00ffff; border-radius: 15px; text-align: center; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 90%; max-width: 400px; }
-        input { width: 100%; padding: 12px; margin: 20px 0; background: #1a1a1a; border: 1px solid #00ffff; color: white; border-radius: 5px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 20px 0; background: #1a1a1a; border: 1px solid #00ffff; color: white; border-radius: 5px; box-sizing: border-box; text-align: center; font-size: 1.1rem; }
         button { background: #00ffff; color: black; border: none; padding: 12px 25px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; transition: 0.3s; }
         button:hover { background: #008b8b; }
-        #keyDisplay { margin-top: 20px; font-size: 1.5rem; letter-spacing: 2px; color: #00ff00; font-weight: bold; display: none; }
+        #keyDisplay { margin-top: 25px; padding: 15px; border: 1px dashed #00ff00; background: rgba(0,255,0,0.05); border-radius: 8px; display: none; }
+        .key-text { font-size: 1.6rem; letter-spacing: 2px; color: #00ff00; font-weight: bold; display: block; margin-top: 5px; }
+        p { color: #ccc; font-size: 0.9rem; }
     </style>
 </head>
 <body>
     <div class="card">
         <h2>🔑 GENERADOR DE KEY</h2>
-        <p>Pega tu HWID (está en tu portapapeles):</p>
-        <input type="text" id="hwidInput" placeholder="EJ: 4F5G6H7J...">
+        <p>Ingresa el <b>TOKEN DE SESIÓN</b> que aparece en el programa:</p>
+        <input type="text" id="tokenInput" placeholder="EJ: A1B2C3" maxlength="6">
         <button onclick="generarKey()">GENERAR MI KEY</button>
-        <div id="keyDisplay"></div>
+        
+        <div id="keyDisplay">
+            <span style="color: #00ff00; font-size: 0.8rem;">TU KEY DE ACTIVACIÓN:</span>
+            <span id="keyValue" class="key-text"></span>
+        </div>
     </div>
 
     <script>
         function generarKey() {
-            const hwid = document.getElementById('hwidInput').value.trim().toUpperCase();
-            const secreto = "FERNET_PRO_2026"; // DEBE SER IGUAL AL DE PYTHON
+            const token = document.getElementById('tokenInput').value.trim().toUpperCase();
+            const secreto = "FERNET_PRO_2026"; // IGUAL QUE EN TU PYTHON
             
-            if (hwid.length < 5) {
-                alert("Por favor, ingresa un HWID válido.");
+            if (token.length < 4) {
+                alert("Por favor, ingresa el Token válido que muestra el programa.");
                 return;
             }
 
-            // Algoritmo: SHA256(HWID + SECRETO) limitado a 8 caracteres
-            const hash = CryptoJS.SHA256(hwid + secreto).toString().toUpperCase();
+            // Algoritmo: SHA256(Token + Secreto) limitado a 8 caracteres
+            // Esto coincide exactamente con la validación de tu script de Python
+            const hash = CryptoJS.SHA256(token + secreto).toString().toUpperCase();
             const keyFinal = hash.substring(0, 8);
 
             const display = document.getElementById('keyDisplay');
-            display.innerText = "TU KEY: " + keyFinal;
+            const val = document.getElementById('keyValue');
+            
+            val.innerText = keyFinal;
             display.style.display = "block";
         }
     </script>
