@@ -23,7 +23,7 @@
         <p style="color: #aaa; font-size: 0.9rem;">Ingresa el <b>TOKEN DE 6 CARACTERES</b>:</p>
         
         <input type="text" id="tokenInput" placeholder="EJ: A1B2C3" maxlength="6">
-        <div id="errorMsg" class="error">⚠️ TOKEN FALSO O INVÁLIDO</div>
+        <div id="errorMsg" class="error"></div>
         
         <button onclick="generarKey()">GENERAR MI KEY</button>
         
@@ -36,35 +36,41 @@
 
     <script>
         function generarKey() {
+            // ELEMENTOS
             const input = document.getElementById('tokenInput');
             const token = input.value.trim().toUpperCase();
             const errorMsg = document.getElementById('errorMsg');
             const display = document.getElementById('keyDisplay');
             const val = document.getElementById('keyValue');
+            
+            // CONFIGURACIÓN (DEBE SER IGUAL A TU PYTHON)
             const secreto = "FERNET_PRO_2026"; 
 
+            // 1. RESET TOTAL (Borra todo lo anterior antes de empezar)
             display.style.display = "none";
             errorMsg.style.display = "none";
+            val.innerText = "";
 
-            // 1. Validar longitud
+            // 2. VALIDACIÓN DE LONGITUD (Si pones "111", entra aquí y se detiene)
             if (token.length !== 6) {
-                errorMsg.innerText = "⚠️ DEBE TENER 6 CARACTERES";
+                errorMsg.innerText = "⚠️ EL TOKEN DEBE TENER 6 CARACTERES";
                 errorMsg.style.display = "block";
-                return;
+                return; // <--- ESTO MATA LA FUNCIÓN
             }
 
-            // 2. VALIDACIÓN DE VERACIDAD (Checksum)
+            // 3. VALIDACIÓN DE FIRMA (Checksum)
+            // Tomamos los primeros 4 y calculamos cuáles deberían ser los últimos 2
             const hashBase = token.substring(0, 4);
             const firmaRecibida = token.substring(4, 6);
             const firmaEsperada = CryptoJS.MD5(hashBase + secreto).toString().toUpperCase().substring(0, 2);
 
             if (firmaRecibida !== firmaEsperada) {
-                errorMsg.innerText = "⚠️ EL TOKEN ES FALSO O NO EXISTE";
+                errorMsg.innerText = "⚠️ TOKEN FALSO O NO AUTORIZADO";
                 errorMsg.style.display = "block";
-                return; // Bloqueo total si la firma no coincide
+                return; // <--- SI EL TOKEN NO ES REAL, SE DETIENE AQUÍ
             }
 
-            // 3. Si pasó la firma, generamos la Key final
+            // 4. GENERACIÓN DE KEY (Solo si pasó todos los filtros anteriores)
             const hashKey = CryptoJS.SHA256(token + secreto).toString().toUpperCase();
             const keyFinal = hashKey.substring(0, 8);
 
