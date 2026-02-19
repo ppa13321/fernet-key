@@ -2,88 +2,72 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fernet Optimizer - Key Gen</title>
+    <title>Fernet Optimizer - Acceso Verificado</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         body { background: #0a0a0a; color: #00ffff; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: #111; padding: 2.5rem; border: 2px solid #00ffff; border-radius: 15px; text-align: center; box-shadow: 0 0 25px rgba(0,255,255,0.2); width: 90%; max-width: 420px; }
-        input { width: 100%; padding: 14px; margin: 20px 0; background: #1a1a1a; border: 1px solid #00ffff; color: white; border-radius: 5px; box-sizing: border-box; text-align: center; font-size: 1.2rem; outline: none; }
-        button { background: #00ffff; color: black; border: none; padding: 14px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; transition: 0.3s; font-size: 1rem; text-transform: uppercase; }
-        button:hover { background: #00dada; transform: scale(1.02); }
-        #keyDisplay { margin-top: 25px; padding: 15px; border: 2px dashed #00ff00; background: rgba(0,255,0,0.05); border-radius: 10px; display: none; }
+        .card { background: #111; padding: 2.5rem; border: 2px solid #00ffff; border-radius: 15px; text-align: center; width: 90%; max-width: 420px; }
+        #bloqueo { display: block; color: #ff4444; }
+        #contenido { display: none; }
+        input { width: 100%; padding: 14px; margin: 20px 0; background: #1a1a1a; border: 1px solid #00ffff; color: white; border-radius: 5px; text-align: center; font-size: 1.2rem; }
+        button { background: #00ffff; color: black; border: none; padding: 14px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; text-transform: uppercase; }
         .key-text { font-size: 1.8rem; letter-spacing: 3px; color: #00ff00; font-weight: bold; display: block; margin: 10px 0; }
-        .copy-btn { background: #00ff00; color: black; padding: 8px 15px; font-size: 0.75rem; border-radius: 5px; cursor: pointer; display: inline-block; font-weight: bold; margin-top: 5px; }
-        .error { color: #ff4444; font-size: 0.85rem; margin-top: -10px; margin-bottom: 15px; font-weight: bold; display: none; }
     </style>
 </head>
-<body>
+<body onload="verificarAcceso()">
     <div class="card">
-        <h2>🔑 GENERADOR DE KEY</h2>
-        <p style="color: #aaa; font-size: 0.9rem;">Ingresa el <b>TOKEN DE 6 CARACTERES</b>:</p>
-        
-        <input type="text" id="tokenInput" placeholder="EJ: A1B2C3" maxlength="6">
-        <div id="errorMsg" class="error"></div>
-        
-        <button onclick="generarKey()">GENERAR MI KEY</button>
-        
-        <div id="keyDisplay">
-            <span style="color: #00ff00; font-size: 0.85rem; font-weight: bold;">SESIÓN VERIFICADA. TU KEY:</span>
-            <span id="keyValue" class="key-text"></span>
-            <div id="btnCopiar" class="copy-btn" onclick="copiarKey()">COPIAR KEY</div>
+        <div id="bloqueo">
+            <h2>⚠️ ACCESO DENEGADO</h2>
+            <p>Debes pasar por el link oficial (Cuty.io) para acceder a esta página.</p>
+        </div>
+
+        <div id="contenido">
+            <h2>🔑 GENERADOR DE KEY</h2>
+            <p style="color: #aaa;">Ingresa tu TOKEN de 6 caracteres:</p>
+            <input type="text" id="tokenInput" maxlength="6" placeholder="EJ: A1B2C3">
+            <div id="errorMsg" style="color: #ff4444; display:none; margin-bottom:10px;"></div>
+            <button onclick="generarKey()">GENERAR MI KEY</button>
+            <div id="keyDisplay" style="display:none; margin-top:20px; border:2px dashed #00ff00; padding:10px;">
+                <span id="keyValue" class="key-text"></span>
+            </div>
         </div>
     </div>
 
     <script>
-        function generarKey() {
-            const token = document.getElementById('tokenInput').value.trim().toUpperCase();
-            const errorMsg = document.getElementById('errorMsg');
-            const display = document.getElementById('keyDisplay');
-            const val = document.getElementById('keyValue');
-            const secreto = "FERNET_PRO_2026"; 
+        const SECRETO_URL = "URL_PASSWORD_2026"; // Clave secreta para el link
 
-            // 1. LIMPIEZA INICIAL
-            display.style.display = "none";
-            errorMsg.style.display = "none";
+        function verificarAcceso() {
+            const params = new URLSearchParams(window.location.search);
+            const passRecibida = params.get('auth');
+            
+            // Generamos la clave basada en la HORA ACTUAL (cambia cada hora)
+            const horaActual = new Date().getHours();
+            const passEsperada = CryptoJS.MD5(SECRETO_URL + horaActual).toString().substring(0, 8);
 
-            // 2. VALIDAR LONGITUD (Bloqueo para '111' o cualquier cosa que no sea 6)
-            if (token.length !== 6) {
-                errorMsg.innerText = "⚠️ EL TOKEN DEBE TENER EXACTAMENTE 6 CARACTERES";
-                errorMsg.style.display = "block";
-                return;
+            if (passRecibida === passEsperada) {
+                document.getElementById('bloqueo').style.display = 'none';
+                document.getElementById('contenido').style.display = 'block';
             }
-
-            // 3. VALIDACIÓN DE AUTENTICIDAD (Checksum)
-            const hashBase = token.substring(0, 4);
-            const firmaRecibida = token.substring(4, 6);
-            // Re-calculamos la firma en la web para comparar
-            const firmaEsperada = CryptoJS.MD5(hashBase + secreto).toString().toUpperCase().substring(0, 2);
-
-            if (firmaRecibida !== firmaEsperada) {
-                errorMsg.innerText = "⚠️ TOKEN FALSO: NO FUE GENERADO POR EL PROGRAMA";
-                errorMsg.style.display = "block";
-                return; // Bloqueo total
-            }
-
-            // 4. GENERACIÓN DE KEY FINAL (Solo si el Token es auténtico)
-            const hashKey = CryptoJS.SHA256(token + secreto).toString().toUpperCase();
-            const keyFinal = hashKey.substring(0, 8);
-
-            val.innerText = keyFinal;
-            display.style.display = "block";
         }
 
-        function copiarKey() {
-            const key = document.getElementById('keyValue').innerText;
-            const btn = document.getElementById('btnCopiar');
-            navigator.clipboard.writeText(key).then(() => {
-                btn.innerText = "¡COPIADO!";
-                btn.style.background = "#ffffff";
-                setTimeout(() => {
-                    btn.innerText = "COPIAR KEY";
-                    btn.style.background = "#00ff00";
-                }, 2000);
-            });
+        function generarKey() {
+            const token = document.getElementById('tokenInput').value.trim().toUpperCase();
+            const secretoProg = "FERNET_PRO_2026"; 
+            
+            if (token.length !== 6) return;
+
+            // Validación de firma del Token (lo que hicimos antes)
+            const hashBase = token.substring(0, 4);
+            const firmaRecibida = token.substring(4, 6);
+            const firmaEsperada = CryptoJS.MD5(hashBase + secretoProg).toString().toUpperCase().substring(0, 2);
+
+            if (firmaRecibida === firmaEsperada) {
+                const hashKey = CryptoJS.SHA256(token + secretoProg).toString().toUpperCase();
+                document.getElementById('keyValue').innerText = hashKey.substring(0, 8);
+                document.getElementById('keyDisplay').style.display = 'block';
+            } else {
+                alert("Token Inválido");
+            }
         }
     </script>
 </body>
