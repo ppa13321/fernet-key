@@ -22,7 +22,7 @@
             padding: 2.5rem; 
             border-radius: 15px; 
             background: #111; 
-            display: none; /* Oculto por defecto */
+            display: none; 
             box-shadow: 0 0 30px rgba(0,255,255,0.2); 
             width: 90%; 
             max-width: 400px;
@@ -32,6 +32,7 @@
             width: 100%; padding: 15px; margin: 20px 0; background: #1a1a1a; 
             border: 1px solid #333; color: #00ffff; border-radius: 8px; 
             text-align: center; font-size: 1.3rem; box-sizing: border-box;
+            text-transform: uppercase;
         }
         button { 
             width: 100%; padding: 14px; background: #00ffff; color: black; 
@@ -44,6 +45,7 @@
             color: #0f0; font-size: 2.2rem; font-weight: bold; 
             border: 2px dashed #0f0; padding: 15px; background: rgba(0,255,0,0.05);
             width: 100%; display: inline-block; box-sizing: border-box;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -65,7 +67,7 @@
 
         <div id="result-container">
             <p style="color: #0f0; margin-bottom: 5px; font-size: 0.8rem;">Copia esta KEY en el programa:</p>
-            <div id="result"></div>
+            <div id="result" title="Click para copiar" onclick="copiarKey()"></div>
         </div>
     </div>
 
@@ -75,46 +77,38 @@
 
         function validarAcceso() {
             const params = new URLSearchParams(window.location.search);
-            let auth = params.get('v');
-            const data = params.get('data');
+            let auth = params.get('auth'); // Usamos 'auth' como en el nuevo Python
+            const dataEnc = params.get('data');
 
-            // --- LÓGICA DE DECODIFICACIÓN Y OCULTAMIENTO ---
-            if (data) {
+            // Si viene data codificada (Base64)
+            if (dataEnc) {
                 try {
-                    // Decodificamos el Base64 que viene de Python
-                    const decoded = atob(data); 
-                    const dataParams = new URLSearchParams(decoded);
-                    auth = dataParams.get('v');
-                    
-                    // TRUCO MAESTRO: Borramos los parámetros de la URL del navegador
-                    // para que el usuario solo vea ".../fernet-key/" y no pueda copiar el acceso.
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                } catch(e) {
-                    auth = null;
-                }
-            }
-            
-            // Si no hay hash de acceso, bloqueamos todo
-            if (!auth) {
-                document.body.innerHTML = '<h1 style="color:red; margin-top:20vh;">ERROR 403: ACCESO PROHIBIDO</h1><p>Debes abrir el link desde el optimizador.</p>';
-                return;
+                    const decoded = atob(dataEnc);
+                    const subParams = new URLSearchParams(decoded);
+                    if (subParams.has('v')) auth = subParams.get('v');
+                } catch(e) {}
             }
 
-            const tiempoBase = Math.floor(Date.now() / 60000);
+            if (!auth) {
+                return; // Mantiene el error por defecto
+            }
+
+            // Validamos tiempo (sincronizado con Python en bloques de 30 seg)
+            const tiempoBase = Math.floor(Date.now() / 30000);
             const hashesValidos = [];
 
-            // Margen de 6 minutos para pasar el acortador
-            for (let i = 0; i < 6; i++) {
-                let h = CryptoJS.MD5(SECRET_WEB + (tiempoBase - i)).toString().substring(0, 10);
+            // Margen de 10 bloques (5 minutos) para que el usuario pase el acortador
+            for (let i = 0; i < 10; i++) {
+                let h = CryptoJS.MD5(SECRET_WEB + (tiempoBase - i)).toString().substring(0, 12);
                 hashesValidos.push(h.toLowerCase());
             }
 
-            // Validación final
             if (hashesValidos.includes(auth.toLowerCase())) {
                 document.getElementById('error-container').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
-            } else {
-                document.body.innerHTML = '<h1 style="color:red; margin-top:20vh;">SESIÓN EXPIRADA</h1><p>El tiempo de validación ha terminado. Reinicia el programa.</p>';
+                
+                // LIMPIEZA SILENCIOSA: Borra rastro de la URL para evitar clonación
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
 
@@ -128,6 +122,7 @@
                 return;
             }
 
+            // Validación de firma del token
             const hashBase = token.substring(0, 4);
             const firmaRecibida = token.substring(4, 6);
             const firmaEsperada = CryptoJS.MD5(hashBase + SECRETO_PROG).toString().toUpperCase().substring(0, 2);
@@ -141,6 +136,12 @@
                 alert("TOKEN INVÁLIDO O FALSO.");
                 resCont.style.display = 'none';
             }
+        }
+
+        function copiarKey() {
+            const text = document.getElementById('result').innerText;
+            navigator.clipboard.writeText(text);
+            alert("¡KEY copiada!");
         }
     </script>
 </body>
