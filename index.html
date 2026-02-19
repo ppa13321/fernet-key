@@ -3,105 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso Temporal - Fernet Optimizer</title>
+    <title>Acceso Seguro - Fernet Optimizer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         body { 
             background: #050505; 
             color: #00ffff; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-family: 'Segoe UI', sans-serif; 
             text-align: center; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             height: 100vh; 
             margin: 0; 
-            overflow: hidden;
         }
         .card { 
             border: 2px solid #00ffff; 
             padding: 2.5rem; 
             border-radius: 15px; 
             background: #111; 
-            display: none; 
-            box-shadow: 0 0 30px rgba(0,255,255,0.15); 
+            display: none; /* Oculto por defecto */
+            box-shadow: 0 0 30px rgba(0,255,255,0.2); 
             width: 90%; 
             max-width: 400px;
-            animation: fadeIn 0.5s ease-out;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
-        #error { color: #ff4444; font-weight: bold; padding: 20px; border: 1px solid #ff4444; border-radius: 10px; background: rgba(255,68,68,0.05); }
-        
+        #error-container { color: #ff4444; font-weight: bold; }
         input { 
-            width: 100%; 
-            padding: 15px; 
-            margin: 20px 0; 
-            background: #1a1a1a; 
-            border: 1px solid #333; 
-            color: #00ffff; 
-            border-radius: 8px; 
-            text-align: center; 
-            font-size: 1.3rem; 
-            font-weight: bold;
-            box-sizing: border-box;
-            transition: 0.3s;
+            width: 100%; padding: 15px; margin: 20px 0; background: #1a1a1a; 
+            border: 1px solid #333; color: #00ffff; border-radius: 8px; 
+            text-align: center; font-size: 1.3rem; box-sizing: border-box;
         }
-        input:focus { border-color: #00ffff; outline: none; box-shadow: 0 0 10px rgba(0,255,255,0.3); }
-        
         button { 
-            width: 100%; 
-            padding: 14px; 
-            background: #00ffff; 
-            color: black; 
-            font-weight: bold; 
-            cursor: pointer; 
-            border: none; 
-            border-radius: 8px; 
-            text-transform: uppercase; 
-            transition: 0.3s;
-            font-size: 1rem;
+            width: 100%; padding: 14px; background: #00ffff; color: black; 
+            font-weight: bold; cursor: pointer; border: none; border-radius: 8px; 
+            text-transform: uppercase; transition: 0.3s;
         }
-        button:hover { background: #fff; transform: scale(1.02); }
-        
+        button:hover { background: #fff; }
         #result-container { margin-top: 25px; display: none; }
         #result { 
-            color: #0f0; 
-            font-size: 2.2rem; 
-            letter-spacing: 3px; 
-            font-weight: bold; 
-            border: 2px dashed #0f0; 
-            padding: 15px; 
-            background: rgba(0,255,0,0.05);
-            display: inline-block;
-            width: 100%;
-            box-sizing: border-box;
+            color: #0f0; font-size: 2.2rem; font-weight: bold; 
+            border: 2px dashed #0f0; padding: 15px; background: rgba(0,255,0,0.05);
+            width: 100%; display: inline-block; box-sizing: border-box;
         }
-        .footer-text { margin-top: 15px; font-size: 0.75rem; color: #555; }
     </style>
 </head>
 <body onload="validarAcceso()">
 
-    <div id="error">
-        <h2 style="font-size: 1.5rem; margin-top: 0;">⚠️ ACCESO DENEGADO</h2>
-        <p>Este enlace es inválido o ha expirado por seguridad.</p>
-        <p style="font-size: 0.85rem;">Vuelve a abrir el programa para generar un nuevo acceso.</p>
+    <div id="error-container">
+        <h2 style="font-size: 1.8rem;">⚠️ ACCESO DENEGADO</h2>
+        <p>Este enlace es inválido o ha expirado.</p>
+        <p style="color: #666; font-size: 0.8rem;">Genera un nuevo acceso desde el programa original.</p>
     </div>
 
     <div id="app" class="card">
-        <h2 style="margin-top: 0; color: #fff;">FERNET <span style="color:#00ffff">KEY</span></h2>
-        <p style="color: #888; font-size: 0.9rem;">Ingresa el TOKEN que aparece en el optimizador:</p>
+        <h2 style="margin-top: 0;">FERNET <span style="color:#00ffff">KEY</span></h2>
+        <p style="color: #888; font-size: 0.9rem;">Ingresa tu TOKEN de 6 caracteres:</p>
         
         <input type="text" id="tokenInput" placeholder="EJ: A1B2C3" maxlength="6" autocomplete="off">
         
-        <button onclick="generarKey()">DESBLOQUEAR AHORA</button>
+        <button onclick="generarKey()">OBTENER MI KEY</button>
 
         <div id="result-container">
             <p style="color: #0f0; margin-bottom: 5px; font-size: 0.8rem;">Copia esta KEY en el programa:</p>
             <div id="result"></div>
         </div>
-        
-        <p class="footer-text">Security Shield Active © 2026</p>
     </div>
 
     <script>
@@ -112,22 +77,28 @@
             const params = new URLSearchParams(window.location.search);
             const auth = params.get('v');
             
-            if (!auth) return;
+            // 1. Si no hay parámetro 'v', eliminamos el contenido del body inmediatamente
+            if (!auth) {
+                document.body.innerHTML = '<h1 style="color:red">ERROR 403: ACCESO PROHIBIDO</h1>';
+                return;
+            }
 
-            // Tiempo base en minutos UTC
             const tiempoBase = Math.floor(Date.now() / 60000);
-            
-            // Margen de 5 MINUTOS (Actual y los 4 minutos anteriores)
-            // Esto da tiempo suficiente para pasar Cuty.io
             const hashesValidos = [];
-            for (let i = 0; i < 5; i++) {
+
+            // Margen de 6 minutos para que el usuario pase el acortador sin prisas
+            for (let i = 0; i < 6; i++) {
                 let h = CryptoJS.MD5(SECRET_WEB + (tiempoBase - i)).toString().substring(0, 10);
                 hashesValidos.push(h.toLowerCase());
             }
 
+            // 2. Si el hash 'v' es correcto, mostramos la App y ocultamos el error
             if (hashesValidos.includes(auth.toLowerCase())) {
-                document.getElementById('error').style.display = 'none';
+                document.getElementById('error-container').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
+            } else {
+                // Si el hash no coincide, borramos todo
+                document.body.innerHTML = '<h1 style="color:red">SESIÓN EXPIRADA</h1><p>Por favor, vuelve a abrir el programa.</p>';
             }
         }
 
@@ -137,25 +108,22 @@
             const resCont = document.getElementById('result-container');
 
             if (token.length !== 6) {
-                alert("Error: El token debe ser de 6 caracteres.");
+                alert("El token debe tener 6 caracteres.");
                 return;
             }
 
-            // Validación de integridad del Token (4 base + 2 firma)
+            // Verificación de firma del Token (Seguridad interna)
             const hashBase = token.substring(0, 4);
             const firmaRecibida = token.substring(4, 6);
             const firmaEsperada = CryptoJS.MD5(hashBase + SECRETO_PROG).toString().toUpperCase().substring(0, 2);
 
             if (firmaRecibida === firmaEsperada) {
-                // Generar la KEY final usando SHA256
                 const finalHash = CryptoJS.SHA256(token + SECRETO_PROG).toString().toUpperCase();
                 resDiv.innerText = finalHash.substring(0, 8);
                 resCont.style.display = 'block';
-                
-                // Efecto visual de éxito
                 document.getElementById('tokenInput').style.borderColor = "#0f0";
             } else {
-                alert("TOKEN INVÁLIDO: Verifica que hayas copiado el código correctamente.");
+                alert("TOKEN INVÁLIDO O FALSO.");
                 resCont.style.display = 'none';
             }
         }
