@@ -7,24 +7,29 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         body { background: #0a0a0a; color: #00ffff; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: #111; padding: 2rem; border: 2px solid #00ffff; border-radius: 15px; text-align: center; box-shadow: 0 0 20px rgba(0,255,255,0.2); width: 90%; max-width: 400px; }
-        input { width: 100%; padding: 12px; margin: 20px 0; background: #1a1a1a; border: 1px solid #00ffff; color: white; border-radius: 5px; box-sizing: border-box; text-align: center; font-size: 1.1rem; }
-        button { background: #00ffff; color: black; border: none; padding: 12px 25px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; transition: 0.3s; }
-        button:hover { background: #008b8b; }
-        #keyDisplay { margin-top: 25px; padding: 15px; border: 1px dashed #00ff00; background: rgba(0,255,0,0.05); border-radius: 8px; display: none; }
-        .key-text { font-size: 1.6rem; letter-spacing: 2px; color: #00ff00; font-weight: bold; display: block; margin-top: 5px; }
-        p { color: #ccc; font-size: 0.9rem; }
+        .card { background: #111; padding: 2.5rem; border: 2px solid #00ffff; border-radius: 15px; text-align: center; box-shadow: 0 0 25px rgba(0,255,255,0.2); width: 90%; max-width: 420px; }
+        h2 { margin-top: 0; font-size: 1.8rem; text-shadow: 0 0 10px #00ffff; }
+        input { width: 100%; padding: 14px; margin: 20px 0; background: #1a1a1a; border: 1px solid #00ffff; color: white; border-radius: 5px; box-sizing: border-box; text-align: center; font-size: 1.2rem; outline: none; }
+        input:focus { box-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        button { background: #00ffff; color: black; border: none; padding: 14px; font-weight: bold; cursor: pointer; border-radius: 5px; width: 100%; transition: 0.3s; font-size: 1rem; text-transform: uppercase; }
+        button:hover { background: #00dada; transform: scale(1.02); }
+        #keyDisplay { margin-top: 25px; padding: 15px; border: 2px dashed #00ff00; background: rgba(0,255,0,0.05); border-radius: 10px; display: none; animation: fadeIn 0.5s; }
+        .key-text { font-size: 1.8rem; letter-spacing: 3px; color: #00ff00; font-weight: bold; display: block; margin-top: 10px; }
+        p { color: #aaa; font-size: 0.95rem; line-height: 1.4; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     <div class="card">
         <h2>🔑 GENERADOR DE KEY</h2>
-        <p>Ingresa el <b>TOKEN DE SESIÓN</b> que aparece en el programa:</p>
+        <p>Ingresa el <b>TOKEN DE SESIÓN</b><br>que aparece en el programa:</p>
+        
         <input type="text" id="tokenInput" placeholder="EJ: A1B2C3" maxlength="6">
+        
         <button onclick="generarKey()">GENERAR MI KEY</button>
         
         <div id="keyDisplay">
-            <span style="color: #00ff00; font-size: 0.8rem;">TU KEY DE ACTIVACIÓN:</span>
+            <span style="color: #00ff00; font-size: 0.85rem; font-weight: bold;">¡SESIÓN AUTORIZADA! TU KEY:</span>
             <span id="keyValue" class="key-text"></span>
         </div>
     </div>
@@ -32,15 +37,14 @@
     <script>
         function generarKey() {
             const token = document.getElementById('tokenInput').value.trim().toUpperCase();
-            const secreto = "FERNET_PRO_2026"; // IGUAL QUE EN TU PYTHON
+            const secreto = "FERNET_PRO_2026"; // IGUAL AL SCRIPT DE PYTHON
             
-            if (token.length < 4) {
-                alert("Por favor, ingresa el Token válido que muestra el programa.");
+            if (token.length < 3) {
+                alert("Por favor, ingresa el Token que muestra el optimizador.");
                 return;
             }
 
-            // Algoritmo: SHA256(Token + Secreto) limitado a 8 caracteres
-            // Esto coincide exactamente con la validación de tu script de Python
+            // Algoritmo SHA256 (Token + Secreto)
             const hash = CryptoJS.SHA256(token + secreto).toString().toUpperCase();
             const keyFinal = hash.substring(0, 8);
 
@@ -53,4 +57,3 @@
     </script>
 </body>
 </html>
- 
